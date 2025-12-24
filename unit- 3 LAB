@@ -1,0 +1,46 @@
+import numpy as np
+import random
+
+# Parameters
+alpha = 0.1      # learning rate
+gamma = 0.9      # discount factor
+epsilon = 0.2    # exploration rate
+episodes = 1000
+
+Q = {}  # Q-table as dictionary
+
+def get_state(board):
+    return tuple(board)
+
+def choose_action(state, available_actions):
+    if random.uniform(0,1) < epsilon:
+        return random.choice(available_actions)
+    q_vals = [Q.get((state,a),0) for a in available_actions]
+    return available_actions[np.argmax(q_vals)]
+
+def update_q(state, action, reward, next_state, next_actions):
+    old_q = Q.get((state,action),0)
+    next_max = max([Q.get((next_state,a),0) for a in next_actions], default=0)
+    Q[(state,action)] = old_q + alpha*(reward + gamma*next_max - old_q)
+
+# Simplified training loop
+for ep in range(episodes):
+    board = [0]*9
+    state = get_state(board)
+    available = list(range(9))
+    while available:
+        action = choose_action(state, available)
+        available.remove(action)
+        # Fake reward: +1 for center move, 0 otherwise (for demo)
+        reward = 1 if action == 4 else 0
+        next_state = get_state(board)
+        update_q(state, action, reward, next_state, available)
+        state = next_state
+    if ep % 200 == 0:
+        print(f"Episode {ep}: Q-table size = {len(Q)}")
+
+# Show learned Q-values for center move
+print("\nSample learned Q-values for center move:")
+for k,v in list(Q.items())[:10]:
+    if k[1] == 4:  # action = center
+        print(k, "->", round(v,3))
